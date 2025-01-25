@@ -10,70 +10,6 @@ Original file is located at
 from google.colab import drive
 drive.mount('/content/drive')
 
-import pandas as pd
-import os
-
-# Load the CSV file
-input_file = "/content/drive/My Drive/Copyof_Pakistan.csv"  # Replace with your file name
-output_file_prefix = "split_pak_file_"  # Prefix for output files
-
-# Create folders
-folders = ["Folder1", "Folder2", "Folder3"]
-base_path = "/content/drive/My Drive/Output_Folders"  # Replace with your desired base path
-
-# Create the base folder if it doesn't exist
-os.makedirs(base_path, exist_ok=True)
-
-# Create subfolders
-for folder in folders:
-    os.makedirs(os.path.join(base_path, folder), exist_ok=True)
-
-# Read the entire CSV
-df = pd.read_csv(input_file)
-
-# Get the total number of rows
-total_rows = df.shape[0]
-
-# Number of rows per split
-split_size = 500
-
-# Split the dataframe into chunks and save them as separate CSV files
-folder_index = 0  # To rotate between folders
-for i in range(0, total_rows, split_size):
-    split_df = df[i:i + split_size]
-
-    # Determine which folder to save the file in
-    current_folder = folders[folder_index % len(folders)]  # Cycle through folders
-    output_path = os.path.join(base_path, current_folder)
-
-    # Create the file name and save the file
-    output_file = os.path.join(output_path, f"{output_file_prefix}{i // split_size + 1}.csv")
-    split_df.to_csv(output_file, index=False)
-    print(f"Saved {output_file} with {len(split_df)} rows.")
-
-    folder_index += 1
-
-import pandas as pd
-
-# Load the CSV file
-input_file = "/content/drive/My Drive/Copyof_Pakistan.csv"  # Replace with your file name
-output_file_prefix = "split_pak_file_"  # Prefix for output files
-
-# Read the entire CSV
-df = pd.read_csv(input_file)
-
-# Get the total number of rows
-total_rows = df.shape[0]
-
-# Number of rows per split
-split_size = 500
-
-# Split the dataframe into chunks and save them as separate CSV files
-for i in range(0, total_rows, split_size):
-    split_df = df[i:i + split_size]
-    output_file = f"{output_file_prefix}{i//split_size + 1}.csv"
-    split_df.to_csv(output_file, index=False)
-    print(f"Saved {output_file} with {len(split_df)} rows.")
 
 import pandas as pd
 import os
@@ -88,7 +24,7 @@ from google.colab import files
 
 # Configure Google GenAI with API key
 
-api_key = "AIzaSyC5P9y8e_jAffmTGTYVirW3I_ElS3VWYqQ"  # Replace with your API key
+api_key = os.getenv("GEMINI_API_KEY")  # Replace with your API key
 genai.configure(api_key=api_key)
 
 # Define the model name (ensure it's the correct one for your case)
