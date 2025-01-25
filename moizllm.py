@@ -263,7 +263,7 @@ else:
 # Provide a download link for the updated file
 from google.colab import files
 files.download(existing_file_path)
-
+os.system("jupyter nbconvert --to notebook --execute /path/to/your/colab/file.ipynb")
 
 
 
