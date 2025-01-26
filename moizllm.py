@@ -11,8 +11,12 @@ import os
 import gdown
 
 # Download the file from Google Drive using its shareable link
-gdown.download("https://drive.google.com/drive/folders/1C6ImLPbM7i17vKZ4iqUw3SMjOz9_mhHC?usp=sharing", "moiz", quiet=False)
-
+-gdown.download(
+    "https://drive.google.com/drive/folders/1C6ImLPbM7i17vKZ4iqUw3SMjOz9_mhHC?usp=sharing",
+    "moiz",
+    fuzzy=True,
+    quiet=False
+)
 
 import pandas as pd
 import os
