@@ -7,8 +7,11 @@ Original file is located at
     https://colab.research.google.com/drive/1se5FosvrjefXbC9Y3s0v3aVl8I6E5A5E
 """
 
-from google.colab import drive
-drive.mount('/content/drive')
+import os
+import gdown
+
+# Download the file from Google Drive using its shareable link
+gdown.download("https://drive.google.com/drive/folders/1C6ImLPbM7i17vKZ4iqUw3SMjOz9_mhHC?usp=sharing", "moiz", quiet=False)
 
 
 import pandas as pd
@@ -44,10 +47,18 @@ def calculate_tokens(prompt, model_name=model_name):
 # Load the dataset
 file_path = '/content/drive/My Drive/Output_Folders/moiz/split_pak_file_3.csv'
 
-df = pd.read_csv(file_path)
-
-# Display a sample of the dataset
-print(df.head())
+for i in range(3, 3 * 17, 3):  # Increment by 3 (3, 6, 9, ..., 48 for 16 files)
+    file_name = f"split_pak_file_{i}.csv"
+    file_path = os.path.join(folder_path, file_name)
+    
+    if os.path.exists(file_path):
+        print(f"Processing file: {file_name}")
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path)
+        
+        # Display a sample of the dataset (for debugging purposes)
+        print(df.head())
 
 # Define batch and sub-batch sizes
 sub_batch_size = 2  # Smaller sub-batches to avoid token limit issues
