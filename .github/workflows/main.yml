@@ -25,3 +25,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python moizllm.py
+      - name: Upload output CSV to Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: output-csv
+          path: output1.csv
