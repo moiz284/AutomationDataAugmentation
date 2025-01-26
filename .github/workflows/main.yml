@@ -19,7 +19,7 @@ jobs:
           python-version: 3.9
 
       - name: Install Dependencies
-        run: pip install openai requests pandas  # Add required libraries
+        run: pip install pandas gdown   # Add required libraries
 
       - name: Run Script
         env:
