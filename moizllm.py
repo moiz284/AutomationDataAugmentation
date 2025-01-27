@@ -14,23 +14,14 @@ output_folder = "output_folder"
 os.makedirs(os.path.dirname(file), exist_ok=True)
 # Configure Google GenAI with API key
 api_key = os.getenv("GEMINI_API_KEY")  # Ensure this environment variable is set
+if not api_key:
+    raise EnvironmentError("GEMINI_API_KEY environment variable is not set.")
 genai.configure(api_key=api_key)
 
 model_name = "gemini-1.5-flash"
 
 # Load the dataset
 # file_path = 'moiz/split_pak_file_3.csv'  # Adjust file path for GitHub Actions
-
-for i in range(3, 3 * 17, 3):  
-    file_name = f"split_pak_file_{i}.csv"
-    file_path = os.path.join('moiz', file_name)  # Adjust for GitHub structure
-
-    if os.path.exists(file_path):
-        print(f"Processing file: {file_name}")
-        df = pd.read_csv(file_path)
-        print(df.head())
-
-sub_batch_size = 2
 base_prompt = """
 Provide the following JSON for each unique job role. Ensure no duplicate rows in the output. Each row should represent a distinct job role, identified by a unique combination of attributes like "Job Title", "Company", "Date Posted".
 
@@ -93,7 +84,7 @@ Guidelines:
 10. If any information (e.g., salary, education required) is missing or not specified, mark it as "N/A."
 11. Ensure the final output is a valid JSON array with no syntax errors.
 """ # Base prompt content remains unchanged
-
+sub_batch_size=2
 max_retries = 5
 rate_limit_delay = 5
 
@@ -106,52 +97,73 @@ output_folder = "output_folder"  # Set a GitHub-compatible output folder
 for file in [output_file, skipped_file, error_log_file]:
     with open(file, mode="w", encoding="utf-8") as f:
         f.write("")  # Clear content
+for i in range(3, 3 * 17, 3):  # Assuming files are named split_pak_file_3.csv, split_pak_file_6.csv, etc.
+    file_name = f"split_pak_file_{i}.csv"
+    file_path = os.path.join(input_folder, file_name)
 
-for sub_batch_start in range(0, len(df), sub_batch_size):
-    sub_batch = df.iloc[sub_batch_start:sub_batch_start + sub_batch_size]
-    data_excerpt = sub_batch.to_string(index=False)
-    prompt = f"Here is a dataset:\n{data_excerpt}\n{base_prompt}"
-    print(f"Processing sub-batch starting at index {sub_batch_start}")
-
-    model = genai.GenerativeModel(model_name)
-    retry_count = 0
-    response_content = None
-    while retry_count < max_retries:
-        try:
-            response = model.generate_content(prompt)
-            response_content = response.text.strip()
-            time.sleep(rate_limit_delay)
-            break
-        except Exception as e:
-            retry_count += 1
-            wait_time = rate_limit_delay
-            print(f"Request failed: {e}. Retrying in {wait_time} seconds...")
-            time.sleep(wait_time)
-
-    if response_content is None:
-        print(f"Max retries reached for sub-batch {sub_batch_start}. Skipping.")
-        with open(skipped_file, mode="a") as log_file:
-            log_file.write(f"Skipped sub-batch {sub_batch_start}:\n{data_excerpt}\n")
+    if not os.path.exists(file_path):
+        print(f"File {file_name} not found. Skipping...")
         continue
 
+    print(f"Processing file: {file_name}")
     try:
-        response_content = re.search(r"\[.*?\]", response_content, re.DOTALL).group(0)
-        data = json.loads(response_content)
+        df = pd.read_csv(file_path)
+        print(f"File {file_name} loaded successfully.")
+        print(df.head())  # Display the first few rows for confirmation
     except Exception as e:
-        print(f"Error decoding JSON for sub-batch {sub_batch_start}: {e}")
-        with open(error_log_file, mode="a") as log_file:
-            log_file.write(f"Error for sub-batch {sub_batch_start}:\n{response_content}\n")
+        print(f"Error loading file {file_name}: {e}")
         continue
 
-    if isinstance(data, list) and all(isinstance(item, dict) for item in data):
-        with open(output_file, mode="a", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            if csvfile.tell() == 0:
-                writer.writerow(data[0].keys())
-            for item in data:
-                writer.writerow(item.values())
-        print(f"Sub-batch data successfully written to {output_file}.")
-    else:
-        print(f"The response for sub-batch {sub_batch_start} is not in the expected JSON list format.")
-        with open(error_log_file, mode="a") as log_file:
-            log_file.write(f"Invalid format for sub-batch {sub_batch_start}:\n{response_content}\n")
+    # Process the dataset in sub-batches
+    for sub_batch_start in range(0, len(df), sub_batch_size):
+        sub_batch = df.iloc[sub_batch_start:sub_batch_start + sub_batch_size]
+        data_excerpt = sub_batch.to_string(index=False)
+        prompt = f"Here is a dataset:\n{data_excerpt}\n{base_prompt}"
+        print(f"Processing sub-batch starting at index {sub_batch_start}")
+
+        model = genai.GenerativeModel(model_name)
+        retry_count = 0
+        response_content = None
+
+        # Retry logic for Generative AI requests
+        while retry_count < max_retries:
+            try:
+                response = model.generate_content(prompt)
+                response_content = response.text.strip()
+                time.sleep(rate_limit_delay)  # Avoid rate-limiting
+                break
+            except Exception as e:
+                retry_count += 1
+                wait_time = rate_limit_delay * retry_count
+                print(f"Request failed: {e}. Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+
+        if response_content is None:
+            print(f"Max retries reached for sub-batch {sub_batch_start}. Skipping...")
+            with open(skipped_file, mode="a", encoding="utf-8") as log_file:
+                log_file.write(f"Skipped sub-batch {sub_batch_start}:\n{data_excerpt}\n")
+            continue
+
+        # Parse response and write to output
+        try:
+            response_content = re.search(r"\[.*?\]", response_content, re.DOTALL).group(0)
+            data = json.loads(response_content)
+        except Exception as e:
+            print(f"Error decoding JSON for sub-batch {sub_batch_start}: {e}")
+            with open(error_log_file, mode="a", encoding="utf-8") as log_file:
+                log_file.write(f"Error for sub-batch {sub_batch_start}:\n{response_content}\n")
+            continue
+
+        # Validate and write JSON response to CSV
+        if isinstance(data, list) and all(isinstance(item, dict) for item in data):
+            with open(output_file, mode="a", newline="", encoding="utf-8") as csvfile:
+                writer = csv.writer(csvfile)
+                if csvfile.tell() == 0:  # Write header only for the first time
+                    writer.writerow(data[0].keys())
+                for item in data:
+                    writer.writerow(item.values())
+            print(f"Sub-batch data successfully written to {output_file}.")
+        else:
+            print(f"The response for sub-batch {sub_batch_start} is not in the expected JSON list format.")
+            with open(error_log_file, mode="a", encoding="utf-8") as log_file:
+                log_file.write(f"Invalid format for sub-batch {sub_batch_start}:\n{response_content}\n")
