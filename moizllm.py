@@ -11,7 +11,7 @@ import google.generativeai as genai
 
 input_folder = "moiz"  # Folder containing input CSV files
 output_folder = "output_folder"
-os.makedirs(os.path.dirname(file), exist_ok=True)
+os.makedirs(output_folder, exist_ok=True)
 # Configure Google GenAI with API key
 api_key = os.getenv("GEMINI_API_KEY")  # Ensure this environment variable is set
 if not api_key:
