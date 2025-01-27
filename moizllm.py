@@ -22,7 +22,7 @@ genai.configure(api_key=api_key)
 model_name = "gemini-1.5-flash"
 
 # Load the dataset
-file_path = 'moiz/split_pak_file_3.csv'  # Adjust file path for GitHub Actions
+# file_path = 'moiz/split_pak_file_3.csv'  # Adjust file path for GitHub Actions
 
 for i in range(3, 3 * 17, 3):  
     file_name = f"split_pak_file_{i}.csv"
