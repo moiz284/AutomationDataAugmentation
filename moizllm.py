@@ -8,13 +8,9 @@ import time
 import google.generativeai as genai
 
 # Download the file from Google Drive using its shareable link
-gdown.download(
-    "https://drive.google.com/drive/folders/1C6ImLPbM7i17vKZ4iqUw3SMjOz9_mhHC?usp=sharing",
-    "moiz",
-    fuzzy=True,
-    quiet=False
-)
 
+input_folder = "moiz"  # Folder containing input CSV files
+output_folder = "output_folder"
 # Configure Google GenAI with API key
 api_key = os.getenv("GEMINI_API_KEY")  # Ensure this environment variable is set
 genai.configure(api_key=api_key)
@@ -100,9 +96,9 @@ Guidelines:
 max_retries = 5
 rate_limit_delay = 5
 
-output_file = "output1.csv"
-skipped_file = "skipped_batches.txt"
-error_log_file = "error_logs.txt"
+output_file = os.path.join(output_folder, "output1.csv")
+skipped_file = os.path.join(output_folder, "skipped_batches.txt")
+error_log_file = os.path.join(output_folder, "error_logs.txt")
 output_folder = "output_folder"  # Set a GitHub-compatible output folder
 
 # Prepare output files
